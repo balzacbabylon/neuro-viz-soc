@@ -38,6 +38,8 @@ int* interpolate(int i0, int d0, int i1, int d1){
 	int* arr = malloc( n * sizeof(int));
 	int di = i1 - i0;
 	int dd = d1 - d0;
+	int step = dd > 0 ? 1 : -1;
+	dd = abs(dd);
 	int error = -(di/2);
 	
 	int d = d0;
@@ -45,7 +47,7 @@ int* interpolate(int i0, int d0, int i1, int d1){
 		arr[i] = d;
 		error += dd;
 		if( error > 0){
-			d += 1;
+			d += step;
 			error -= di;
 		}
 	}
@@ -89,6 +91,8 @@ void drawline(Point p0, Point p1, short int color){
 
 		}
 
+		free(ys);
+
 	}else{
 
 		//line is more vertical
@@ -97,10 +101,11 @@ void drawline(Point p0, Point p1, short int color){
 			swap(&p0,&p1);
 		}
 		int* xs = interpolate(p0.y,p0.x,p1.y,p1.x);
-		for( int i = p0.y; i <= p1.y; i++){
-			put_pixel( xs[i - p0.y], i, color);
+		for( int y = p0.y; y <= p1.y; y++){
+			put_pixel( xs[y - p0.y], y, color);
 		}
 
+		free(xs);
 
 	}
 
@@ -127,10 +132,13 @@ int main(void){
 
 	*(pixel_ctrl_ptr + 1) = &buffer;
 
-	Point p0 = {32, 100};
-	Point p1 = {80, 110};
+	Point p0 = {110, 110};
+	Point p1 = {170, 150};
+	Point p2 = {160, 120};
 
 	drawline(p0,p1,0xFFFF);
+	drawline(p2,p1,0xFFFF);
+	drawline(p2,p0,0xFFFF);
 	
 	/*
 	for(int i  = 0; i < 240; i++){
