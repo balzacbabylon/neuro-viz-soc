@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // Required for memcpy
 
 int pixel_buffer_start;
 #define JTAG_UART_BASE			0xFF201000
@@ -27,15 +28,26 @@ void put_pixel(int x, int y, short int color){
 }
 // ToDo: can be re-written in a less messy way for if statement
 // ToDo: can this be done without using floating point?
-int* interpolate(int i0, int d0, int i1, int d1){
+
+typedef struct {
+    int* data;
+    size_t length;
+} IntArray;
+
+IntArray interpolate(int i0, int d0, int i1, int d1){
 	// assuming i0 < i1 (handled externally then)
+
+	IntArray res;
 	if( i0 == i1){
-		int* arr = malloc(sizeof(int));
-		arr[0] = d0;
-		return arr;
+		res.data = malloc(sizeof(int));
+		res.data[0] = d0;
+		res.length = 1;
+		return res;
 	}
+
 	int n = i1 - i0 + 1;
-	int* arr = malloc( n * sizeof(int));
+	res.length = n;
+	res.data = malloc( n * sizeof(int));
 	int di = i1 - i0;
 	int dd = d1 - d0;
 	int step = dd > 0 ? 1 : -1;
@@ -44,15 +56,16 @@ int* interpolate(int i0, int d0, int i1, int d1){
 	
 	int d = d0;
 	for(int i = 0; i < n; i++){
-		arr[i] = d;
+		res.data[i] = d;
 		error += dd;
-		if( error > 0){
+		// Change 'if' to 'while' to allow multiple steps per Y increment
+		while(error > 0){
 			d += step;
 			error -= di;
 		}
 	}
 
-	return arr;
+	return res;
 
 }
 
@@ -84,14 +97,14 @@ void drawline(Point p0, Point p1, short int color){
 		if( p0.x > p1.x ){
 			swap(&p0,&p1);
 		}
-		int* ys = interpolate(p0.x,p0.y,p1.x,p1.y);
+		IntArray ys = interpolate(p0.x,p0.y,p1.x,p1.y);
 		for(int i = p0.x; i <= p1.x; i++){
 
-			put_pixel(i, ys[ i - p0.x], color);
+			put_pixel(i, ys.data[ i - p0.x], color);
 
 		}
 
-		free(ys);
+		//free(ys);
 
 	}else{
 
@@ -100,15 +113,75 @@ void drawline(Point p0, Point p1, short int color){
 		if( p0.y > p1.y){
 			swap(&p0,&p1);
 		}
-		int* xs = interpolate(p0.y,p0.x,p1.y,p1.x);
+		IntArray xs = interpolate(p0.y,p0.x,p1.y,p1.x);
 		for( int y = p0.y; y <= p1.y; y++){
-			put_pixel( xs[y - p0.y], y, color);
+			put_pixel( xs.data[y - p0.y], y, color);
 		}
 
-		free(xs);
+		//free(xs);
 
 	}
 
+
+}
+
+IntArray combine_arrays(IntArray a1, IntArray a2) {
+    IntArray result;
+    
+    // 1. Calculate the new length
+    // (n-1 from first) + (all n from second)
+    result.length = (a1.length - 1) + a2.length;
+    
+    // 2. Allocate memory
+    result.data = malloc(result.length * sizeof(int));
+    if (result.data == NULL) return result; // Handle allocation failure
+
+    // 3. Copy (n-1) elements from the first array
+    // Syntax: memcpy(destination, source, number_of_bytes)
+    memcpy(result.data, a1.data, (a1.length - 1) * sizeof(int));
+
+    // 4. Copy all elements from the second array into the remaining slot
+    // We offset the destination pointer by (x01.length - 1)
+    memcpy(result.data + (a1.length - 1), a2.data, a2.length * sizeof(int));
+
+    return result;
+}
+
+void drawfilledtriangle(Point P0, Point P1, Point P2, short int color){
+
+	if(P1.y < P0.y) swap(&P1, &P0);
+	if(P2.y < P0.y) swap(&P2, &P0);
+	if(P2.y < P1.y) swap(&P2, &P1);
+
+	IntArray x01 = interpolate(P0.y, P0.x, P1.y, P1.x);
+	IntArray x12 = interpolate(P1.y, P1.x, P2.y, P2.x);
+	IntArray x02 = interpolate(P0.y, P0.x, P2.y, P2.x);
+
+	// 1. Calculate length and set up struct
+	IntArray x012 = combine_arrays(x01,x12); 
+
+	int m = x012.length / 2;
+	IntArray x_left, x_right;
+	if( x02.data[m] < x012.data[m]){
+		x_left = x02;
+		x_right = x012;
+	}else {
+		x_left = x012;
+		x_right = x02;
+	}
+
+	for( int y = P0.y ; y <= P2.y; y++){
+
+		for( int x = x_left.data[y - P0.y]; x <= x_right.data[y - P0.y] ; x++){
+			put_pixel(x,y,color);
+		}
+
+	}
+
+	free(x01.data);
+	free(x12.data);
+	free(x02.data);
+	free(x012.data);
 
 }
 	
@@ -136,6 +209,8 @@ int main(void){
 	Point p1 = {170, 150};
 	Point p2 = {160, 120};
 
+	drawfilledtriangle(p0, p1, p2, 0xFCCC);
+	
 	drawline(p0,p1,0xFFFF);
 	drawline(p2,p1,0xFFFF);
 	drawline(p2,p0,0xFFFF);
