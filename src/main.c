@@ -1,10 +1,81 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> // Required for memcpy
+#include <stdint.h>
 
 int pixel_buffer_start;
 #define JTAG_UART_BASE			0xFF201000
 	
+#define CW	320
+#define CH	240
+#define FOCAL_LENGTH 256
+
+typedef int32_t fixed;
+
+typedef struct { 
+	int x; 
+	int y; 
+} Point2D;
+
+typedef struct {
+    int* data;
+    size_t length;
+} IntArray;
+
+typedef struct {
+
+	float* data;
+	size_t length;
+} FArray;
+
+typedef struct { 
+
+	fixed data[240];
+	int length;
+
+}Scanline;
+
+typedef struct{
+
+	fixed* data;
+	size_t length;
+
+}FixedArray;
+
+typedef struct{
+
+	fixed x;
+	fixed y;
+	fixed z;
+
+}Vertex;
+
+
+typedef struct{
+
+	int x;
+	int y;
+	fixed h;
+
+}Point;
+
+// TODO: parameterize the fixed point number (16)
+#define FIXED_ONE (1 << 16)
+#define INT_TO_FIXED(x) ((x) << 16)
+#define FIXED_TO_INT(x) ((x) >> 16)
+#define FLOAT_TO_FIXED(f) ((fixed)((f) * 65536.0f))
+
+// Multiply two fixed-point numbers
+// Cast to (int64_t) prevents overflow before the division (shift)
+static inline fixed mul_fixed(fixed a, fixed b) {
+    return (fixed)(((int64_t)a * b) >> 16);
+}
+
+// Division
+// TODO: There is no overflow/underflow checking...need to add that
+static inline fixed div_fixed(fixed a, fixed b) {
+    return (fixed)(((int64_t)a << 16) / (int64_t)b);
+}
 
 short int buffer[240][512];
 
@@ -19,26 +90,57 @@ void put_jtag(volatile int * JTAG_UART_ptr, char c)
 
 void put_pixel(int x, int y, short int color){
 	
-	//going to invert the coordinate plane so that x and y start at
-	//bottom left of screen
-
-	buffer[239 - y][x] = color;
-
+	//setting coordinate system zeros at y = 119 and x = 159
+	if (x > 160 || x < -159 || y > 119 || y < -120) return;
+	buffer[119 - y][159 + x] = color;
 
 }
-// ToDo: can be re-written in a less messy way for if statement
-// ToDo: can this be done without using floating point?
+// TODO: can be re-written in a less messy way for if statement
+// TODO: can this be done without using floating point?
 
-typedef struct {
-    int* data;
-    size_t length;
-} IntArray;
 
-typedef struct {
+Point project_vertex(Vertex p) {
 
-	float* data;
-	size_t length;
-} FArray;
+	Point v;
+
+	v.x = FIXED_TO_INT(div_fixed((mul_fixed(p.x,INT_TO_FIXED(FOCAL_LENGTH))),p.z));
+    v.y = FIXED_TO_INT(div_fixed((mul_fixed(p.y,INT_TO_FIXED(FOCAL_LENGTH))),p.z));
+
+	return v;
+
+}
+
+
+FixedArray interpolate(fixed i0, fixed d0, fixed i1, fixed d1){
+
+	FixedArray res;
+	// EDGE CASE 1: Single Point (Avoid Divide by Zero)
+	if (i0 == i1){
+		res.data = malloc(sizeof(fixed));
+		res.data[0] = d0;
+		res.length = 1;
+		return res;
+	}	
+
+	// EDGE CASE 2: Buffer Overflow Protection
+    // Ensure we don't write past the end of our static array
+	int n = FIXED_TO_INT(i1) - FIXED_TO_INT(i0) + 1;
+	fixed dd = d1 - d0;
+	fixed di = i1 - i0;
+
+	//TODO: see if di needs to be treated as an int
+	fixed step = div_fixed(dd,di);
+	fixed d = d0;
+
+	for( int i = 0; i < n ; i++){
+		res.data[i] = d;
+		d += step;
+	}
+
+	return res;
+
+}
+
 
 IntArray iinterpolate(int i0, int d0, int i1, int d1){
 	// assuming i0 < i1 (handled externally then)
@@ -102,20 +204,9 @@ FArray finterpolate(int i0, float d0, int i1, float d1){
 
 }
 
-
-
-
-typedef struct{
-
-	int x;
-	int y;
-	float h;
-
-}Point;
-
 void swap(Point* p0, Point* p1){
 
-	int x_t,y_t;
+	fixed x_t,y_t;
 	x_t = p0->x;
 	y_t = p0->y;
 	p0->x = p1->x;
@@ -332,20 +423,14 @@ int main(void){
 
     volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
 	
-	pixel_buffer_start = *pixel_ctrl_ptr; //reading the VALUE of whats in FF203020
+	//pixel_buffer_start = *pixel_ctrl_ptr; //reading the VALUE of whats in FF203020
 	
 	char *str;
 	char text_string[50];
 	
-	//sprintf(text_string, "%x", pixel_buffer_start);
-	/*
-	for (str = text_string; *str != 0; ++str){
-		put_jtag(JTAG_UART_ptr, *str);
-	}
-	put_jtag(JTAG_UART_ptr, '\n');
-	*/
-	*(pixel_ctrl_ptr + 1) = (int)&buffer;
+	//*(pixel_ctrl_ptr + 1) = (int)&buffer;
 
+	/*
 	Point p0 = {10, 10,0.0};
 	Point p1 = {270, 90,0.5};
 	Point p2 = {160, 220,1.0};
@@ -357,14 +442,38 @@ int main(void){
 	drawline(p0,p1,0xFFFF);
 	drawline(p2,p1,0xFFFF);
 	drawline(p2,p0,0xFFFF);
-	
-	/*
-	for(int i  = 0; i < 240; i++){
-		for(int j = 0; j < 320; j++){
-			
-			buffer[i][j] = 0xFFFC;
-		}
-	}*/
+	*/
+
+	//TODO: Implement out of bounds checking 
+	Vertex vAf = {FLOAT_TO_FIXED(-3.0),FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(5)};
+	Vertex vBf = {FLOAT_TO_FIXED(-3.0),FLOAT_TO_FIXED(1.0),FLOAT_TO_FIXED(5)};
+	Vertex vCf = {FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(1.0),FLOAT_TO_FIXED(5)};
+	Vertex vDf = {FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(5)};
+
+	Vertex vAb = {FLOAT_TO_FIXED(-3.0),FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(8)};
+	Vertex vBb = {FLOAT_TO_FIXED(-3.0),FLOAT_TO_FIXED(1.0),FLOAT_TO_FIXED(8)};
+	Vertex vCb = {FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(1.0),FLOAT_TO_FIXED(8)};
+	Vertex vDb = {FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(-1.0),FLOAT_TO_FIXED(8)};
+
+
+	//back face
+	drawline(project_vertex(vAb),project_vertex(vBb),0x001F);
+	drawline(project_vertex(vBb),project_vertex(vCb),0x001F);
+	drawline(project_vertex(vCb),project_vertex(vDb),0x001F);
+	drawline(project_vertex(vDb),project_vertex(vAb),0x001F);
+
+	//front to back edges
+	drawline(project_vertex(vAf),project_vertex(vAb),0x07E0);
+	drawline(project_vertex(vBf),project_vertex(vBb),0x07E0);
+	drawline(project_vertex(vCf),project_vertex(vCb),0x07E0);
+	drawline(project_vertex(vDf),project_vertex(vDb),0x07E0);
+
+	// front face
+	drawline(project_vertex(vAf),project_vertex(vBf),0xF800);
+	drawline(project_vertex(vBf),project_vertex(vCf),0xF800);
+	drawline(project_vertex(vCf),project_vertex(vDf),0xF800);
+	drawline(project_vertex(vDf),project_vertex(vAf),0xF800);
+
 	*(pixel_ctrl_ptr) = 1;
 
 }
