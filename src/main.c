@@ -423,12 +423,12 @@ int main(void){
 
     volatile int * pixel_ctrl_ptr = (int *)0xFF203020;
 	
-	//pixel_buffer_start = *pixel_ctrl_ptr; //reading the VALUE of whats in FF203020
+	pixel_buffer_start = *pixel_ctrl_ptr; //reading the VALUE of whats in FF203020
 	
 	char *str;
 	char text_string[50];
 	
-	//*(pixel_ctrl_ptr + 1) = (int)&buffer;
+	*(pixel_ctrl_ptr + 1) = (int)&buffer;
 
 	/*
 	Point p0 = {10, 10,0.0};
