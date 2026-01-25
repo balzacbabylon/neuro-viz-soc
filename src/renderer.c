@@ -316,9 +316,18 @@ void drawshadedtriangle(Point P0, Point P1, Point P2, short int color) {
     free(x012.data); free(h012.data);
 }
 
-void DrawWireFrameTriangle(Point P0, Point P1, Point P2, short int color){
+static void DrawWireFrameTriangle(Point P0, Point P1, Point P2, short int color){
 
 	//TODO implement method using color vertex
+	drawline(P0,P1,color);
+	drawline(P2,P1,color);
+	drawline(P2,P0,color);
+
+}
+
+static void RenderTriangle(Triangle t, PointArray* pj, short int color){
+
+	DrawWireFrameTriangle(pj->data[t.i0],pj->data[t.i1],pj->data[t.i2],color);
 
 }
 
@@ -329,13 +338,7 @@ void RenderObject(Object obj, PointArray* pj){
 		pj->data[i] = project_vertex(obj.v.data[i]);	
 	}
 	for(int j = 0; j < obj.t.length; j++){
-		RenderTriangle(obj.t.data[j],pj);
+		RenderTriangle(obj.t.data[j],pj,obj.tca[j]);
 	}
-
-}
-
-void RenderTriangle(Triangle t, PointArray* pj){
-
-
 
 }

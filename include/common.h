@@ -41,7 +41,20 @@ typedef struct{
 
 }PointArray;
 
-typedef struct{
+typedef struct Vertex {
+
+    fixed x;
+    fixed y;
+    fixed z;
+    fixed nx;
+    fixed ny;
+    fixed nz;
+    short int color;
+    //fixed h;
+
+} Vertex;
+
+typedef struct VertexArray{
 
     Vertex* data;
     size_t length;
@@ -68,21 +81,9 @@ typedef struct{
 
     VertexArray v; 
     TriangleArray t;
+    short int* tca;
     
 }Object;
-
-typedef struct {
-
-    fixed x;
-    fixed y;
-    fixed z;
-    fixed nx;
-    fixed ny;
-    fixed nz;
-    short int color;
-    //fixed h;
-
-} Vertex;
 
 // Array wrappers (Consider renaming to DynamicIntArray etc.)
 typedef struct {

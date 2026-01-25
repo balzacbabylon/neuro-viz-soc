@@ -7,7 +7,9 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",
-                "${file}",
+                "${workspaceFolder}\\src\\*.c", // Compiles every .c file in src
+                "-I${workspaceFolder}\\include",
+                "-I${workspaceFolder}\\generated",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],

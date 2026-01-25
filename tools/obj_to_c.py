@@ -28,7 +28,7 @@ def parse_and_process(filename):
             if not parts: continue
 
             if parts[0] == 'v':
-                raw_vertices.append((float(parts[1]), float(parts[2]), float(parts[3]) + 10.0))
+                raw_vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
             
             elif parts[0] == 'f':
                 face_idxs = []
