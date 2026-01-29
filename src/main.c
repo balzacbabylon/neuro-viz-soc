@@ -78,11 +78,43 @@ int main(void){
 	PointArray projected;
 	projected.data = malloc(_NUM_VERTS*sizeof(Point));
 	projected.length = _NUM_VERTS;
+
+	fixed d = CalculateAutoPosition(&o, 2.5);
+	
+	//RenderObject(o, &projected,60.0,d);
 	
 
-	RenderObject(o, &projected);
-	
+	//platform_swap_buffers();
 
-	platform_swap_buffers();
+	// --- NEW POLLING LOOP ---
+    int angle_y = 0; // Previously "current_angle"
+    int angle_x = 0; // New X-axis angle
+
+	while(1) {
+        platform_clear_screen();
+
+        int keys = platform_read_keys();
+
+        // --- Y AXIS CONTROLS (Yaw) ---
+        if (keys & 0x1) angle_y += 5; // KEY 0
+        if (keys & 0x8) angle_y -= 5; // KEY 3
+
+        // --- X AXIS CONTROLS (Pitch) ---
+        // Bit 1 is KEY1, Bit 2 is KEY2
+        if (keys & 0x2) angle_x += 5; // KEY 1
+        if (keys & 0x4) angle_x -= 5; // KEY 2
+
+        // Normalize Angles (0-360)
+        if (angle_y >= 360) angle_y -= 360;
+        if (angle_y < 0)    angle_y += 360;
+
+        if (angle_x >= 360) angle_x -= 360;
+        if (angle_x < 0)    angle_x += 360;
+
+        // Pass both angles to renderer
+        RenderObject(o, &projected, angle_x, angle_y, d);
+
+        wait_for_vsync();
+    }
 
 }

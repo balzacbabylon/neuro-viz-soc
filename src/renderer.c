@@ -332,13 +332,97 @@ static void RenderTriangle(Triangle t, PointArray* pj, short int color){
 }
 
 
-void RenderObject(Object obj, PointArray* pj){
+// Simple rotation around Y axis (spinning)
+// You can add X-axis rotation similarly
+Vertex apply_transform(Vertex v, int angle_x, int angle_y, fixed trans_x, fixed trans_y, fixed trans_z) {
+    Vertex r;
+    
+    // --- 1. ROTATION Y (Yaw) ---
+    // Rotates around the vertical axis (Left/Right spin)
+    fixed cos_y = fixed_cos(angle_y);
+    fixed sin_y = fixed_sin(angle_y);
 
-	for(int i = 0; i < obj.v.length; i++ ){
-		pj->data[i] = project_vertex(obj.v.data[i]);	
-	}
-	for(int j = 0; j < obj.t.length; j++){
-		RenderTriangle(obj.t.data[j],pj,obj.tca[j]);
-	}
+    // Temp variables for Y-rotation result
+    // x' = x*cos - z*sin
+    // z' = x*sin + z*cos
+    // y' = y (unchanged)
+    fixed y_rot_x = mul_fixed(v.x, cos_y) - mul_fixed(v.z, sin_y);
+    fixed y_rot_y = v.y;
+    fixed y_rot_z = mul_fixed(v.x, sin_y) + mul_fixed(v.z, cos_y);
 
+    // --- 2. ROTATION X (Pitch) ---
+    // Rotates around the horizontal axis (Up/Down spin)
+    // We use the coordinates RESULTING from Step 1
+    fixed cos_x = fixed_cos(angle_x);
+    fixed sin_x = fixed_sin(angle_x);
+
+    // x'' = x' (unchanged)
+    // y'' = y'*cos - z'*sin
+    // z'' = y'*sin + z'*cos
+    r.x = y_rot_x;
+    r.y = mul_fixed(y_rot_y, cos_x) - mul_fixed(y_rot_z, sin_x);
+    r.z = mul_fixed(y_rot_y, sin_x) + mul_fixed(y_rot_z, cos_x);
+
+    // --- 3. TRANSLATION ---
+    r.x = r.x + trans_x;
+    r.y = r.y + trans_y;
+    r.z = r.z + trans_z; 
+
+    r.color = v.color;
+    return r;
+}
+
+
+void RenderObject(Object obj, PointArray* pj, int angle_x, int angle_y, fixed offset_z){
+
+    for(int i = 0; i < obj.v.length; i++ ){
+        // Pass both angles to the transform
+        Vertex world_v = apply_transform(obj.v.data[i], angle_x, angle_y, 0, 0, offset_z);
+        pj->data[i] = project_vertex(world_v);    
+    }
+    
+    for(int j = 0; j < obj.t.length; j++){
+        RenderTriangle(obj.t.data[j], pj, obj.tca[j]);
+    }
+}
+
+/*
+ * Calculates the Z-translation needed to fit the object in the camera view.
+ * * @param obj: The object to analyze
+ * @param fov_degrees: The desired Field of View (e.g., 60.0 or 90.0)
+ * @param padding_factor: Multiplier for extra space (e.g., 1.1 for 10% padding)
+ * @return: The required Z translation in fixed-point format
+ */
+fixed CalculateAutoPosition(Object* obj, float padding_factor) {
+    
+    // 1. Find Bounding Radius (Same as before)
+    uint64_t max_dist_sq = 0;
+
+    for (int i = 0; i < obj->v.length; i++) {
+        Vertex v = obj->v.data[i];
+        int64_t x = v.x; 
+        int64_t y = v.y;
+        int64_t z = v.z;
+        uint64_t dist = (uint64_t)(x*x) + (uint64_t)(y*y) + (uint64_t)(z*z);
+        if(dist > max_dist_sq) max_dist_sq = dist;
+    }
+
+    fixed R = (fixed)isqrt(max_dist_sq);
+
+    // 2. Calculate Distance using Screen Constants
+    // Formula: d = (R * FOCAL_LENGTH) / (CH / 2)
+    
+    // We use the smallest dimension (CH) so it fits vertically.
+    // If you used CW, it might get cut off at the top/bottom.
+    fixed half_screen_height = INT_TO_FIXED(CH / 2); // 120 in fixed point
+    fixed focal_length = INT_TO_FIXED(FOCAL_LENGTH);
+
+    // d = (R * 256) / 120
+    fixed d = div_fixed(mul_fixed(R, focal_length), half_screen_height);
+
+    // 3. Apply Padding (e.g., 1.1x)
+    fixed padding = FLOAT_TO_FIXED(padding_factor);
+    d = mul_fixed(d, padding);
+
+    return d;
 }
