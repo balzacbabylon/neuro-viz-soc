@@ -8,14 +8,31 @@
 // Hide the buffer inside the .c file so external code can't corrupt it directly
 static short int buffer1[240][512];
 static short int buffer2[240][512];
-static volatile int pixel_buffer_start;
+
+// POINTER CHANGE: This points to 16-bit color data, so use short int*
+static volatile short int *pixel_buffer_start;
+
 static volatile int *pixel_ctrl_ptr = (int *)PIXEL_BUF_CTRL;
 
-// TODO: Should the error checking for out of bounds be here? 
+/*
+ * Puts a pixel to the CURRENT Back Buffer.
+ * Includes the requested coordinate transformation:
+ * (0,0) is in the center.
+ * Y is inverted (positive is up).
+ */
 void put_pixel(int x, int y, short int color) {
-    // Coordinate transformation
+    // 1. Bounds checking
     if (x > 160 || x < -159 || y > 119 || y < -120) return;
-    buffer2[119 - y][159 + x] = color;
+
+    // 2. Calculate the "Raw" VGA coordinates (0-319, 0-239)
+    // Shift X so 0 becomes center (159)
+    // Shift/Invert Y so 0 becomes center (119) and Up is positive
+    int raw_x = 159 + x;
+    int raw_y = 119 - y;
+
+    // 3. Write to the current back buffer pointer
+    // Formula: Base_Address + (Row * Width_Padding) + Column
+    *(pixel_buffer_start + (raw_y * 512) + raw_x) = color;
 }
 
 void platform_init(void) {
@@ -24,20 +41,27 @@ void platform_init(void) {
     /* now, swap the front/back buffers, to set the front buffer location */
     wait_for_vsync();
     /* initialize a pointer to the pixel buffer, used by drawing functions */
-    for (int y = 0; y < 240; y++) {
-        for (int x = 0; x < 320; x++) {
-            // Note: buffer index logic must match put_pixel's coordinate system
-            // put_pixel uses: buffer[119 - y][159 + x]
-            // We can just clear the whole raw array row by row for simplicity
-             buffer1[y][x] = 0x0000;
-        }
-    }
+    pixel_buffer_start = (short int *)(*(pixel_ctrl_ptr));
+    platform_clear_screen();
+
     *(pixel_ctrl_ptr + 1) = (int) &buffer2;
+    pixel_buffer_start = (short int *)(*(pixel_ctrl_ptr + 1));
     
 }
 
+/*
+ * 1. Triggers the hardware to swap Front and Back buffers.
+ * 2. Waits for the Vertical Sync (swap completion).
+ * 3. Updates the pixel_buffer_start to point to the NEW Back Buffer.
+ */
 void platform_swap_buffers(void) {
     *(pixel_ctrl_ptr) = 1; // Trigger buffer swap
+    
+    wait_for_vsync();      // Block until swap is complete
+
+    // Update global pointer to the NEW Back Buffer address
+    // The hardware puts the address of the new back buffer in register offset +1
+    pixel_buffer_start = (short int *)(*(pixel_ctrl_ptr + 1));
 }
 
 // Reads the raw value of the pushbutton data register
@@ -46,15 +70,16 @@ int platform_read_keys(void) {
     return *key_ptr;
 }
 
-// Clears the buffer to black (0x0000) so the object can move without leaving trails
+// Clears the CURRENT Back Buffer
 void platform_clear_screen(void) {
-    // We only need to clear the visible 320x240 area to save time
+    // We only need to clear the visible 320x240 area
     for (int y = 0; y < 240; y++) {
+        // Calculate row offset once per row for speed
+        volatile short int * row_ptr = pixel_buffer_start + (y * 512);
+        
         for (int x = 0; x < 320; x++) {
-            // Note: buffer index logic must match put_pixel's coordinate system
-            // put_pixel uses: buffer[119 - y][159 + x]
-            // We can just clear the whole raw array row by row for simplicity
-             buffer2[y][x] = 0x0000;
+             // Set pixel to black (0x0000)
+             *(row_ptr + x) = 0x0000;
         }
     }
 }
@@ -62,15 +87,14 @@ void platform_clear_screen(void) {
 void wait_for_vsync(){
     int status;
 
-    *pixel_ctrl_ptr = 1;  // start synchronization process
-                        // write 1 into front buffer address register
-
+    //*pixel_ctrl_ptr = 1;  // start synchronization process
+    
     status = *(pixel_ctrl_ptr + 3);  // read status register
 
     while ((status & 0x01) != 0) {  // polling loop waiting for S bit to go to 0
         status = *(pixel_ctrl_ptr + 3);
     }
-} 
+}
 
 /*
  * Helper: Sends a single character to the JTAG UART.
