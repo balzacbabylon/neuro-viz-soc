@@ -1,0 +1,25 @@
+# Quartus Artifacts
+**/db/
+**/incremental_db/
+**/output_files/
+*.qws
+*.bak
+
+# HPS Binaries
+software/build/
+software/generated/*.o
+*.elf
+*.so
+*.a
+*.o
+
+# Matlab
+modeling/matlab/*.asv
+*.asv
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
