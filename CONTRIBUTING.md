@@ -21,40 +21,20 @@ All work must be tracked via GitHub Issues.
     - **Verification IS MANDATORY**. You must document how you verified your changes (simulation waveforms, hardware test output, or software logs).
 
 ## 3. Label Taxonomy
-Please use the following labels to categorize issues and PRs.
+We use the standard GitHub labels for categorization.
 
-### Type
 | Label | Description |
 | :--- | :--- |
-| `type: bug` | Fixes a defect or unexpected behavior. |
-| `type: feat` | Introduces new functionality. |
-| `type: docs` | Updates documentation only. |
-| `type: refactor` | Code change that neither fixes a bug nor adds a feature. |
-| `type: infra` | CI/CD, build scripts, or project configuration. |
-| `type: research` | Exploratory tasks, literature review, or modeling (Matlab/Python). |
+| `bug` | Something isn't working. |
+| `documentation` | Improvements or additions to documentation. |
+| `duplicate` | This issue or pull request already exists. |
+| `enhancement` | New feature or request. |
+| `good first issue` | Good for newcomers. |
+| `help wanted` | Extra attention is needed. |
+| `invalid` | This doesn't seem right. |
+| `question` | Further information is requested. |
+| `wontfix` | This will not be worked on. |
 
-### Area (Component)
-| Label | Description |
-| :--- | :--- |
-| `area: fpga-rtl` | Verilog/SystemVerilog logic (Quartus). |
-| `area: fpga-hls` | High-Level Synthesis IP (HLS). |
-| `area: hps-sw` | C/C++ software running on the ARM processor. |
-| `area: modeling` | Matlab/Python algorithms for verification "Golden Vectors". |
-| `area: system` | Qsys/Platform Designer, interconnected architecture. |
-
-### Priority
-| Label | Description |
-| :--- | :--- |
-| `p0: critical` | Blocks development or breaks main functionality. Immediate action required. |
-| `p1: high` | Important for the current milestone. |
-| `p2: medium` | Normal priority feature or fix. |
-| `p3: low` | Nice to have, minor polish. |
-
-### Agent Workflow
-| Label | Description |
-| :--- | :--- |
-| `agent: safe` | Task is scoped and safe for autonomous agent execution. |
-| `agent: human-only` | Task requires complex domain judgment or physical hardware access. |
 
 ## 4. Coding Standards
 
