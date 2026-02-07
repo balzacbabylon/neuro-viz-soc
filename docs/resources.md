@@ -1,14 +1,19 @@
 # Resources & Research
 
-## FPGA & Ray Tracing references
-- [Tom Verbeure: Ray Tracer using HDL](https://github.com/tomverbeure/rt?tab=readme-ov-file) & [Racing the Beam Ray Tracer](https://tomverbeure.github.io/rtl/2018/11/26/Racing-the-Beam-Ray-Tracer.html)
+## FPGA Graphics & Rendering
+### Rasterization (Current)
 - [element14presents: 3D object rendering using an FPGA](https://www.youtube.com/watch?v=6Tq_s6I7n9k) (Reference for challenges)
 - [jedbrooke: Verilog 3D Graphics Github](https://github.com/jedbrooke/verilog-3d-graphics)
 - [Altera Nios II embedded design suite documentation](file:///C:/intelFPGA_lite/18.1/nios2eds/documents/index.htm)
 - [DE1-SOC Docs ECE 5760, Cornell University](https://people.ece.cornell.edu/land/courses/ece5760/DE1_SOC/)
 - [UofT DE1-SoC Tutorials](https://www-ug.eecg.utoronto.ca/desl/de1.html)
 
+### Ray Tracing (Future Research)
+- [Tom Verbeure: Ray Tracer using HDL](https://github.com/tomverbeure/rt?tab=readme-ov-file) & [Racing the Beam Ray Tracer](https://tomverbeure.github.io/rtl/2018/11/26/Racing-the-Beam-Ray-Tracer.html)
+
 ## Computer Graphics & C
+- [Gabriel Gambetta: Computer Graphics from Scratch](https://gabrielgambetta.com/computer-graphics-from-scratch/)
+- [Refactoring Guru: Dive Into DESIGN PATTERNS](https://refactoring.guru/design-patterns/book)
 - [Scratchapixel: Ray Tracing](https://www.scratchapixel.com/)
 - [Michal Zalobny: 3D Renderer in C](https://github.com/michalzalobny/3d-renderer-in-c)
 - [Understanding the View Matrix](https://www.3dgep.com/understanding-the-view-matrix/)

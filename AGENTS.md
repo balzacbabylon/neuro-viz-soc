@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Mission
-You are working in this repo to: implement a Hardware Accelerated 3D reconstruction of EEG data on a DE1-SoC board, merging real-time ray tracing capability with neuro-imaging algorithms.
+You are working in this repo to: implement a Hardware Accelerated 3D reconstruction of EEG data on a DE1-SoC board, merging real-time raster-based rendering capability with neuro-imaging algorithms.
 Optimize for: correctness > maintainability > speed.
 
 ## Non-negotiables (guardrails)
