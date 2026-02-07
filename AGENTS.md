@@ -46,3 +46,41 @@ If the task mentions **APIs / Interfaces**, you MUST read:
 2) Execute step-by-step; run relevant commands.
 3) Summarize changes + include how to verify (commands).
 4) Update docs in `docs/` if behavior/architecture changed.
+
+## GitHub Workflow (Issues / PRs)
+
+### Source of truth
+- All work MUST be tied to a GitHub issue (or a newly created issue).
+- Do not implement features from vague prompts alone; if requirements are unclear, comment on the issue with questions and a proposed plan.
+
+### Before coding
+1. Read the linked issue and restate the Acceptance Criteria.
+2. Identify relevant docs in `docs/` and read them first (especially subsystem docs).
+3. Propose a short plan (3–7 steps). If the task is non-trivial or risky, write the plan into `docs/plan.md` and proceed step-by-step.
+
+### Scope control
+- Keep changes minimal and targeted. Avoid broad refactors unless explicitly requested.
+- Prefer multiple small PRs over one large PR.
+- If you discover additional work, open a follow-up issue rather than expanding scope.
+
+### Branch + PR requirements
+- Create a branch named: `issue-<number>-<short-slug>`.
+- Open a PR using the PR template and link the issue using: `Fixes #<number>` or `Refs #<number>`.
+- The PR description MUST include:
+  - Summary of changes
+  - Verification commands actually run (or explain why not possible)
+  - Any docs updated and why
+
+### Definition of Done
+A task is complete only when:
+- Acceptance Criteria are satisfied
+- Tests are added/updated where appropriate
+- CI passes (or failures are explained and unrelated)
+- Docs are updated if behavior, APIs, or workflows changed
+
+### If blocked / uncertain
+- Do not guess. Add a comment to the issue describing:
+  - what you tried
+  - what you observed
+  - what information is missing
+  - 1–2 options to proceed
