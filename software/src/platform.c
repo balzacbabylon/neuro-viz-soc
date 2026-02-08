@@ -1,5 +1,6 @@
 #include "platform.h"
 #include <stdio.h>
+#include "address_map_nios2.h"
 
 #define JTAG_UART_BASE 0xFF201000
 #define PIXEL_BUF_CTRL 0xFF203020
@@ -68,6 +69,12 @@ void platform_swap_buffers(void) {
 int platform_read_keys(void) {
     volatile int * key_ptr = (int *)KEY_BASE;
     return *key_ptr;
+}
+
+// Reads the raw value of the switch data register (0xFF200040)
+int platform_read_switches(void) {
+    volatile int * sw_ptr = (int *)SW_BASE;
+    return *sw_ptr; // Returns 10-bit integer (SW9-SW0)
 }
 
 // Clears the CURRENT Back Buffer

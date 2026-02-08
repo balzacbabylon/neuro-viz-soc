@@ -89,23 +89,35 @@ int main(void){
 
 	//platform_swap_buffers();
 
-	// --- NEW POLLING LOOP ---
+    // --- NEW POLLING LOOP ---
     int angle_y = 0; // Previously "current_angle"
-    int angle_x = 0; // New X-axis angle
+    int angle_x = 0; // Pitch
+    int angle_z = 0; // Roll (New)
 
 	while(1) {
         platform_clear_screen();
 
         int keys = platform_read_keys();
+        int switches = platform_read_switches();
 
         // --- Y AXIS CONTROLS (Yaw) ---
+        // Rotates left/right
         if (keys & 0x1) angle_y += 5; // KEY 0
         if (keys & 0x8) angle_y -= 5; // KEY 3
 
         // --- X AXIS CONTROLS (Pitch) ---
+        // Rotates up/down
         // Bit 1 is KEY1, Bit 2 is KEY2
         if (keys & 0x2) angle_x += 5; // KEY 1
         if (keys & 0x4) angle_x -= 5; // KEY 2
+
+        // --- Z AXIS CONTROLS (Roll) ---
+        // Rotates clockwise/counter-clockwise using Switches
+        // SW0 (Bit 0): Roll Clockwise
+        if (switches & 0x1) angle_z += 5; 
+        
+        // SW1 (Bit 1): Roll Counter-Clockwise
+        if (switches & 0x2) angle_z -= 5;
 
         // Normalize Angles (0-360)
         if (angle_y >= 360) angle_y -= 360;
@@ -114,8 +126,11 @@ int main(void){
         if (angle_x >= 360) angle_x -= 360;
         if (angle_x < 0)    angle_x += 360;
 
-        // Pass both angles to renderer
-        RenderObject(o, &projected, angle_x, angle_y, d);
+        if (angle_z >= 360) angle_z -= 360;
+        if (angle_z < 0)    angle_z += 360;
+
+        // Pass all angles to renderer
+        RenderObject(o, &projected, angle_x, angle_y, angle_z, d);
 		//printuart("rendered object");
 
         platform_swap_buffers();

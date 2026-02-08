@@ -18,3 +18,16 @@
 2. **Process**: HPS -> FPGA (Inverse Model IP) -> 3D Source Reconstruction.
 3. **Render**: 3D Sources -> Rasterization Engine (FPGA/Software Hybrid) -> Video Output (VGA/HDMI).
    > **Note**: Ray Tracing is planned as a future rendering backend.
+
+## Input Map (HPS Software)
+The software currently polls the DE1-SoC peripherals for user input to control the 3D view.
+
+| Input | Function | Axis |
+| :--- | :--- | :--- |
+| **KEY0** | Rotate Yaw Right (+5°) | Y-Axis |
+| **KEY3** | Rotate Yaw Left (-5°) | Y-Axis |
+| **KEY1** | Rotate Pitch Up (+5°) | X-Axis |
+| **KEY2** | Rotate Pitch Down (-5°) | X-Axis |
+| **SW0** | Roll Clockwise (+5°) | Z-Axis |
+| **SW1** | Roll Counter-Clockwise (-5°) | Z-Axis |
+
